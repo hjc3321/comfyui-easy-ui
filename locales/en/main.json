@@ -1,0 +1,108 @@
+{
+  "nodeDefs": {
+    "VoiceRefDescription": {
+      "display_name": "Voice Reference Description",
+      "description": "Analyze timbre features of multiple reference audios and merge them with their usage notes into prompt text (unconnected audio is skipped; too-short audio raises an error; audio over 15s triggers a UI warning).",
+      "inputs": {
+        "audio_1": { "name": "audio_1", "tooltip": "1st reference audio (connect LoadAudio)" },
+        "text_1": { "name": "note_1", "tooltip": "Usage note for the 1st audio, e.g. audio 1 is character 1's voice reference" },
+        "audio_2": { "name": "audio_2", "tooltip": "2nd reference audio (skipped if not connected)" },
+        "text_2": { "name": "note_2", "tooltip": "Usage note for the 2nd audio" },
+        "audio_3": { "name": "audio_3", "tooltip": "3rd reference audio (skipped if not connected)" },
+        "text_3": { "name": "note_3", "tooltip": "Usage note for the 3rd audio" },
+        "audio_4": { "name": "audio_4", "tooltip": "4th reference audio (skipped if not connected)" },
+        "text_4": { "name": "note_4", "tooltip": "Usage note for the 4th audio" },
+        "audio_5": { "name": "audio_5", "tooltip": "5th reference audio (skipped if not connected)" },
+        "text_5": { "name": "note_5", "tooltip": "Usage note for the 5th audio" }
+      },
+      "outputs": {
+        "0": { "name": "voice_prompt", "tooltip": "Usage notes + timbre descriptions, joined as text" }
+      }
+    },
+    "ResolutionSelectorShortSide": {
+      "display_name": "Resolution by Short Side",
+      "description": "Compute width/height from canvas aspect ratio + short side + alignment, more intuitive than megapixels.",
+      "inputs": {
+        "aspect_ratio": { "name": "aspect_ratio", "tooltip": "Canvas aspect ratio" },
+        "short_side": { "name": "short_side", "tooltip": "Pixel value of the short side (e.g. 768 / 1080)" },
+        "align": { "name": "align", "tooltip": "Alignment multiple for width/height (default 64)" },
+        "swap": { "name": "swap", "tooltip": "Swap width and height" }
+      },
+      "outputs": {
+        "0": { "name": "width" },
+        "1": { "name": "height" }
+      }
+    },
+    "EasyLoadImage": {
+      "display_name": "Load Image (None placeholder)",
+      "description": "Enhanced Load Image: supports selecting None as a placeholder and outputs None instead of raising an error.",
+      "inputs": {
+        "image": { "name": "image", "tooltip": "Pick an image from the input folder; selecting [None] outputs None (placeholder)" }
+      },
+      "outputs": {
+        "0": { "name": "image", "tooltip": "Image tensor; None when placeholder is selected" },
+        "1": { "name": "mask", "tooltip": "Mask tensor; None when placeholder is selected" }
+      }
+    },
+    "EasyBatchImages": {
+      "display_name": "Batch Images (skip None)",
+      "description": "Enhanced Batch Images: input ports expand dynamically, None/empty inputs are skipped automatically (the built-in node raises an error).",
+      "inputs": {
+        "image_1": { "name": "image_1", "tooltip": "1st image; skipped when None or empty" },
+        "image_2": { "name": "image_2", "tooltip": "2nd image; skipped when None or empty" }
+      },
+      "outputs": {
+        "0": { "name": "image", "tooltip": "Merged image batch" }
+      }
+    },
+    "LoadVideoRange": {
+      "display_name": "Load Video (range)",
+      "description": "Pick a video range on the node UI (seconds or frames, with interactive crop and resize). Outputs both the selected segment and the full segment (images + audio).",
+      "inputs": {
+        "video": { "name": "video", "tooltip": "Pick a video from the input folder, or upload / drop a file (absolute paths supported on desktop)" },
+        "start_time": { "name": "start (s)", "tooltip": "Selection start in seconds (Time mode)" },
+        "end_time": { "name": "end (s)", "tooltip": "Selection end; 0 means the end of the video" },
+        "duration": { "name": "duration (s)", "tooltip": "Selection length in seconds; linked to the start time" },
+        "start_frame": { "name": "start (frame)", "tooltip": "Selection start frame (Frames mode)" },
+        "end_frame": { "name": "end (frame)", "tooltip": "Selection end frame; 0 means the end of the video" },
+        "duration_frames": { "name": "duration (frames)", "tooltip": "Selection length in frames; linked to the start frame" },
+        "resize_method": { "name": "resize", "tooltip": "How to fit the custom width/height" },
+        "custom_width": { "name": "w (0 = source)", "tooltip": "Output width; 0 uses the source width" },
+        "custom_height": { "name": "h (0 = source)", "tooltip": "Output height; 0 uses the source height" },
+        "frame_rate": { "name": "fps", "tooltip": "Extract frames at this frame rate" },
+        "display_mode": { "name": "display mode", "tooltip": "UI display mode: seconds / frames (controlled by the toggle on the node)" },
+        "crop_x": { "name": "crop x", "tooltip": "Crop area top-left X (normalized 0~1, driven by the crop box)" },
+        "crop_y": { "name": "crop y", "tooltip": "Crop area top-left Y (normalized 0~1, driven by the crop box)" },
+        "crop_w": { "name": "crop w", "tooltip": "Crop area width (normalized 0~1, driven by the crop box)" },
+        "crop_h": { "name": "crop h", "tooltip": "Crop area height (normalized 0~1, driven by the crop box)" }
+      },
+      "outputs": {
+        "0": { "name": "images (selection)", "tooltip": "Selected video segment frames" },
+        "1": { "name": "audio (selection)", "tooltip": "Selected video segment audio; silence when there is no audio track" },
+        "2": { "name": "duration", "tooltip": "Selected segment duration in seconds" },
+        "3": { "name": "frame count", "tooltip": "Selected segment frame count" },
+        "4": { "name": "images (full)", "tooltip": "Full video frames (untrimmed range)" },
+        "5": { "name": "audio (full)", "tooltip": "Full video audio (untrimmed range)" },
+        "6": { "name": "full frame count", "tooltip": "Full segment frame count" },
+        "7": { "name": "start frame", "tooltip": "Start frame of the selection" },
+        "8": { "name": "end frame", "tooltip": "End frame of the selection" }
+      }
+    },
+    "LoadAudioRange": {
+      "display_name": "Load Audio (range)",
+      "description": "Pick an audio range on the node UI. Outputs both the selected segment and the full segment.",
+      "inputs": {
+        "audio": { "name": "audio", "tooltip": "Pick audio (or a video with an audio track) from the input folder, or upload / drop a file (absolute paths supported on desktop)" },
+        "start_time": { "name": "start (s)", "tooltip": "Selection start in seconds" },
+        "end_time": { "name": "end (s)", "tooltip": "Selection end; 0 means the end of the audio" },
+        "duration": { "name": "duration (s)", "tooltip": "Selection length in seconds; linked to the start time" }
+      },
+      "outputs": {
+        "0": { "name": "audio (selection)", "tooltip": "Selected audio segment" },
+        "1": { "name": "audio (full)", "tooltip": "Full audio segment (untrimmed)" },
+        "2": { "name": "duration", "tooltip": "Selected segment duration in seconds" },
+        "3": { "name": "full duration", "tooltip": "Full segment duration in seconds" }
+      }
+    }
+  }
+}

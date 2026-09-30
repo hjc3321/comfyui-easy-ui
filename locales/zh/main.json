@@ -1,0 +1,108 @@
+{
+  "nodeDefs": {
+    "VoiceRefDescription": {
+      "display_name": "音色参考描述",
+      "description": "分析多路参考音频的音色特征，与各自的用途说明拼接为提示词文本（未接入的音频自动跳过；过短报错；超 15s 界面告警）",
+      "inputs": {
+        "audio_1": { "name": "音频1", "tooltip": "第 1 路参考音频（接 LoadAudio）" },
+        "text_1": { "name": "说明1", "tooltip": "第 1 路音频的用途说明，例如：音频1是角色1的音色参考" },
+        "audio_2": { "name": "音频2", "tooltip": "第 2 路参考音频（不接则跳过）" },
+        "text_2": { "name": "说明2", "tooltip": "第 2 路音频的用途说明" },
+        "audio_3": { "name": "音频3", "tooltip": "第 3 路参考音频（不接则跳过）" },
+        "text_3": { "name": "说明3", "tooltip": "第 3 路音频的用途说明" },
+        "audio_4": { "name": "音频4", "tooltip": "第 4 路参考音频（不接则跳过）" },
+        "text_4": { "name": "说明4", "tooltip": "第 4 路音频的用途说明" },
+        "audio_5": { "name": "音频5", "tooltip": "第 5 路参考音频（不接则跳过）" },
+        "text_5": { "name": "说明5", "tooltip": "第 5 路音频的用途说明" }
+      },
+      "outputs": {
+        "0": { "name": "音色提示词", "tooltip": "用途说明 + 音色特征描述拼接后的文本" }
+      }
+    },
+    "ResolutionSelectorShortSide": {
+      "display_name": "分辨率选择器·最短边",
+      "description": "按画布比例 + 最短边 + 对齐倍数计算宽高，比百万像素输入更直观",
+      "inputs": {
+        "aspect_ratio": { "name": "画布比例", "tooltip": "画布比例" },
+        "short_side": { "name": "最短边", "tooltip": "最短边的像素值（更直观：768/1080 等）" },
+        "align": { "name": "对齐", "tooltip": "宽高对齐倍数（缺省 64，可改 32/16/8）" },
+        "swap": { "name": "交换宽高", "tooltip": "交换宽高（把竖屏输出成横屏等）" }
+      },
+      "outputs": {
+        "0": { "name": "宽度" },
+        "1": { "name": "高度" }
+      }
+    },
+    "EasyLoadImage": {
+      "display_name": "加载图像 (None占位)",
+      "description": "增强版 Load Image：支持选择 None 作为占位，输出为 None 而不报错",
+      "inputs": {
+        "image": { "name": "图片", "tooltip": "从 input 目录选择图片；选 [None] 不使用图片 时输出 None（占位）" }
+      },
+      "outputs": {
+        "0": { "name": "图像", "tooltip": "图片张量；选择 None 时输出 None" },
+        "1": { "name": "遮罩", "tooltip": "遮罩张量；选择 None 时输出 None" }
+      }
+    },
+    "EasyBatchImages": {
+      "display_name": "批量图像 (跳过None)",
+      "description": "增强版 Batch Images：输入端口可动态扩展，None/空输入自动跳过（内置节点会报错）",
+      "inputs": {
+        "image_1": { "name": "图像1", "tooltip": "第 1 路图片；为 None 或空时自动跳过" },
+        "image_2": { "name": "图像2", "tooltip": "第 2 路图片；为 None 或空时自动跳过" }
+      },
+      "outputs": {
+        "0": { "name": "图像", "tooltip": "合并后的图片批次" }
+      }
+    },
+    "LoadVideoRange": {
+      "display_name": "加载视频 (界面选区)",
+      "description": "在节点界面上选择视频区间（秒/帧可切换，支持画面裁剪与缩放），输出「选择的视频段」与「整个视频段」的画面和音频",
+      "inputs": {
+        "video": { "name": "视频", "tooltip": "从 input 目录选择视频，或上传 / 拖入视频文件（桌面环境支持绝对路径）" },
+        "start_time": { "name": "起点(秒)", "tooltip": "选择区间起点，单位秒（Time 模式）" },
+        "end_time": { "name": "终点(秒)", "tooltip": "选择区间终点；0 表示到视频结尾" },
+        "duration": { "name": "时长(秒)", "tooltip": "选择区间时长；与起点联动" },
+        "start_frame": { "name": "起点(帧)", "tooltip": "选择区间起始帧（Frames 模式）" },
+        "end_frame": { "name": "终点(帧)", "tooltip": "选择区间结束帧；0 表示到视频结尾" },
+        "duration_frames": { "name": "时长(帧)", "tooltip": "选择区间帧数；与起始帧联动" },
+        "resize_method": { "name": "缩放方式", "tooltip": "自定义宽高时采用的缩放方式" },
+        "custom_width": { "name": "宽(0=原始)", "tooltip": "输出宽度；0 表示使用原始宽度" },
+        "custom_height": { "name": "高(0=原始)", "tooltip": "输出高度；0 表示使用原始高度" },
+        "frame_rate": { "name": "帧率", "tooltip": "按该帧率抽取帧" },
+        "display_mode": { "name": "显示模式", "tooltip": "界面显示模式：秒 / 帧（由节点界面上的切换按钮控制）" },
+        "crop_x": { "name": "裁剪X", "tooltip": "画面裁剪区左上角 X（归一化 0~1，由裁剪框控制）" },
+        "crop_y": { "name": "裁剪Y", "tooltip": "画面裁剪区左上角 Y（归一化 0~1，由裁剪框控制）" },
+        "crop_w": { "name": "裁剪宽", "tooltip": "画面裁剪区宽度（归一化 0~1，由裁剪框控制）" },
+        "crop_h": { "name": "裁剪高", "tooltip": "画面裁剪区高度（归一化 0~1，由裁剪框控制）" }
+      },
+      "outputs": {
+        "0": { "name": "所选画面", "tooltip": "选择的视频段画面" },
+        "1": { "name": "所选音频", "tooltip": "选择的视频段音频；无音轨时为静音" },
+        "2": { "name": "所选时长", "tooltip": "所选片段时长（秒）" },
+        "3": { "name": "所选帧数", "tooltip": "所选片段帧数" },
+        "4": { "name": "整段画面", "tooltip": "整个视频段画面（未裁剪区间）" },
+        "5": { "name": "整段音频", "tooltip": "整个视频段音频（未裁剪区间）" },
+        "6": { "name": "整段帧数", "tooltip": "整段帧数" },
+        "7": { "name": "起始帧", "tooltip": "所选区间起始帧" },
+        "8": { "name": "结束帧", "tooltip": "所选区间结束帧" }
+      }
+    },
+    "LoadAudioRange": {
+      "display_name": "加载音频 (界面选区)",
+      "description": "在节点界面上选择音频区间，输出「选择的音频段」与「整个音频段」",
+      "inputs": {
+        "audio": { "name": "音频", "tooltip": "从 input 目录选择音频或带音轨的视频，也可上传 / 拖入（桌面环境支持绝对路径）" },
+        "start_time": { "name": "起点(秒)", "tooltip": "选择区间起点，单位秒" },
+        "end_time": { "name": "终点(秒)", "tooltip": "选择区间终点；0 表示到音频结尾" },
+        "duration": { "name": "时长(秒)", "tooltip": "选择区间时长；与起点联动" }
+      },
+      "outputs": {
+        "0": { "name": "所选音频", "tooltip": "选择的音频段" },
+        "1": { "name": "整段音频", "tooltip": "整个音频段（未裁剪）" },
+        "2": { "name": "所选时长", "tooltip": "所选片段时长（秒）" },
+        "3": { "name": "整段时长", "tooltip": "整段时长（秒）" }
+      }
+    }
+  }
+}
