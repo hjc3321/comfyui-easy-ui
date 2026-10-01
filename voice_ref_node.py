@@ -43,7 +43,7 @@ class VoiceRefDescription:
             "required": {
                 "audio_1": ("AUDIO", {"tooltip": "第 1 路参考音频（接 LoadAudio）"}),
                 "text_1": ("STRING", {
-                    "default": "音频1是角色1的音色参考",
+                    "default": "音频1：",
                     "multiline": False,
                     "tooltip": "第 1 路音频的用途说明",
                 }),
@@ -54,7 +54,7 @@ class VoiceRefDescription:
         for i in range(2, MAX_AUDIO + 1):
             inputs["optional"][f"audio_{i}"] = ("AUDIO", {"tooltip": f"第 {i} 路参考音频（不接则跳过）"})
             inputs["optional"][f"text_{i}"] = ("STRING", {
-                "default": f"音频{i}是角色{i}的音色参考",
+                "default": f"音频{i}：",
                 "multiline": False,
                 "tooltip": f"第 {i} 路音频的用途说明",
             })
@@ -116,8 +116,8 @@ class VoiceRefDescription:
             m = analyze_waveform(x, sr)
             desc = describe_timbre(m)
 
-            purpose = (text or "").strip().rstrip("。.，, \n")
-            parts.append(f"{purpose}。音色特征：{desc}" if purpose else f"音色特征：{desc}")
+            purpose = (text or "").strip()
+            parts.append(f"{purpose}{desc}" if purpose else desc)
 
             if m["duration"] > MAX_DURATION:
                 alerts.append(
