@@ -1,101 +1,224 @@
-"""Timbre metrics -> natural-language description mapping (H3 style)."""
+"""Timbre metrics -> natural-language description mapping (H3 style).
+
+All description text is output in English.  Designed to produce highly
+discriminative, numerically-grounded descriptions for TTS voice cloning.
+"""
+
+
+# ---------------------------------------------------------------- helpers
+
+def _nan(v):
+    return v != v
 
 
 def map_gender(m):
-    """F0 median -> adult male/female voice classification."""
+    """F0 median + low-energy share -> voice classification."""
     f0 = m["f0_median"]
-    if f0 != f0:  # NaN
-        return "性别音区未知"
-    if f0 < 145:
-        return "男声"
+    low = m["low_energy"]
+    if _nan(f0):
+        return "voice gender unknown"
+    # male: lower F0 and/or strong low-frequency chest resonance
+    if f0 < 145 or low > 12:
+        return "male voice"
     if f0 < 175:
-        conf = "偏男声" if f0 < 160 else "男声或低音区女声（模糊区）"
-        return f"{conf}（F0 中位 {f0:.0f} Hz 处于男女重叠区）"
-    return "女声"
+        conf = "leaning male voice" if f0 < 160 else "male or low-register female voice (ambiguous)"
+        return f"{conf} (F0 median {f0:.0f} Hz, in the male/female overlap zone)"
+    return "female voice"
 
 
-def map_register(f0_med):
-    """F0 median -> pitch register description (female-oriented thresholds)."""
-    if f0_med != f0_med:  # NaN
-        return "音高未知"
-    if f0_med < 165:
-        return "音高偏低沉的中低音区"
-    if f0_med < 220:
-        return "中低音区"
-    if f0_med < 260:
-        return "中高音区"
-    return "高音区（音高明显偏高）"
+def map_register(m):
+    """Pitch register with F0 number embedded."""
+    f0 = m["f0_median"]
+    if _nan(f0):
+        return "pitch register unknown"
+    if f0 < 165:
+        reg = "a deep, low-to-mid pitch register"
+    elif f0 < 220:
+        reg = "a mid-low pitch register"
+    elif f0 < 260:
+        reg = "a mid-high pitch register"
+    else:
+        reg = "a high pitch register"
+    return f"{reg} (F0 median {f0:.0f} Hz)"
 
 
 def map_brightness(m):
-    """Rolloff + band share -> bright/dark description."""
+    """Brightness with low-frequency energy % and spectral tilt."""
     ro = m["rolloff85_median"]
-    low = m["bands"]["low"]
+    low = m["low_energy"]
+    tilt = m.get("spectral_tilt")
+    tilt_str = f", spectral tilt {tilt:.0f} dB/dec" if tilt and not _nan(tilt) else ""
     if ro < 450 or low > 40:
-        return "音色暗暖圆润、低频柔和有包裹感"
+        return f"a dark, warm, rounded tone with soft, enveloping lows ({low:.0f}% low-freq energy{tilt_str})"
     if ro < 900:
-        return "音色均衡自然"
-    return "音色明亮清脆、中频前突穿透力强"
+        return f"a balanced, natural tone ({low:.0f}% low-freq energy{tilt_str})"
+    if low > 8:
+        return (f"a bright, forward tone with strong mid-highs but a solid chest foundation "
+                f"({low:.0f}% low-freq energy{tilt_str})")
+    return f"a bright, crisp tone with forward, penetrating mids ({low:.0f}% low-freq energy{tilt_str})"
 
 
 def map_texture(m):
-    """Flatness + sibilance share -> voice texture."""
+    """Flatness + sibilance + harmonic PAR -> texture with numbers."""
     desc = []
     f = m["flatness"]
+    par = m.get("harmonic_par", 0)
     if f < 0.02:
-        desc.append("谐波干净、声线清亮利落")
+        desc.append(f"clean harmonics and a clear, crisp voice (flatness {f:.3f}, harmonic PAR {par:.0f}x)")
     elif f < 0.05:
-        desc.append("声线自然干净")
+        desc.append(f"a natural, clean voice (flatness {f:.3f}, harmonic PAR {par:.0f}x)")
     else:
-        desc.append("带明显气声质感")
-    if m["bands"]["sib"] < 1.5:
-        desc.append("齿音极少、柔和不刺耳")
-    elif m["bands"]["sib"] > 3:
-        desc.append("齿音偏明显")
-    return "、".join(desc)
+        desc.append(f"a noticeably breathy texture (flatness {f:.3f}, harmonic PAR {par:.0f}x)")
+    sib = m["bands"]["sib"]
+    if sib < 1.5:
+        desc.append("minimal sibilance, soft and non-harsh")
+    elif sib > 3:
+        desc.append("prominent sibilance")
+    return ", ".join(desc)
 
 
 def map_pace(m):
     """Transitions/sec + longest voiced run -> tempo description."""
     if m["tps"] > 5.0 or m["longest_voiced"] < 0.9:
-        return "语速快、句子短促有力、节奏跳跃"
+        return "a fast pace, short punchy phrases and a jumpy rhythm"
     if m["tps"] < 4.2 and m["longest_voiced"] > 1.0:
-        return "语速舒缓、停顿多、娓娓道来的叙述感"
-    return "语速平稳、节奏自然"
+        return "a relaxed pace with frequent pauses, a storytelling narration feel"
+    return "a steady pace and natural rhythm"
 
 
 def map_loudness(m):
     lv = m["level_dbfs"]
-    if lv != lv:
-        return "音量未知"
+    if _nan(lv):
+        return "unknown loudness"
     if lv > -28:
-        return "说话响亮有能量"
+        return "loud and energetic delivery"
     if lv < -31:
-        return "轻声细语、音量轻柔"
-    return "音量适中"
+        return "soft-spoken, gentle delivery"
+    return "moderate volume"
 
 
 def map_prosody(m):
     sp = m["f0_span_st"]
-    if sp != sp:
-        return "语调未知"
+    if _nan(sp):
+        return "unknown intonation"
     if sp > 13:
-        return "语调抑扬起伏大、表现力强"
+        return "wide, expressive intonation swings"
     if sp < 8:
-        return "语调平缓克制"
-    return "语调起伏自然"
+        return "flat, restrained intonation"
+    return "natural intonation"
 
+
+def map_formants(m):
+    """Vocal-tract resonances (F1/F2) — strong timbre discriminator.
+
+    Longer vocal tract (typically male) -> lower formants.
+    """
+    f1, f2 = m.get("formant_f1"), m.get("formant_f2")
+    if not f1 or _nan(f1) or not f2 or _nan(f2):
+        return ""
+    return f"vocal-tract resonances F1 {f1:.0f} Hz / F2 {f2:.0f} Hz"
+
+
+# ---------------------------------------------------------------- main
 
 def describe_timbre(m):
-    """Full timbre description sentence from metrics dict."""
-    return (
-        f"{map_gender(m)}，{map_register(m['f0_median'])}，{map_brightness(m)}，"
-        f"{map_texture(m)}，说话{map_pace(m)}、{map_loudness(m)}，{map_prosody(m)}。"
-    )
+    """Full timbre description sentence from metrics dict.
+
+    Designed to be maximally discriminative: every sentence embeds
+    concrete numeric values so that two similar-sounding references
+    still produce clearly different text.
+    """
+    # gender + register line
+    g = map_gender(m)
+    r = map_register(m)
+
+    # body / resonance line (low-frequency weight is the strongest
+    # discriminator between chesty male and focused female voices)
+    b = map_brightness(m)
+
+    # texture line
+    t = map_texture(m)
+
+    # formants (available with librosa backend)
+    fmt = map_formants(m)
+
+    # rhythm / delivery line
+    p = map_pace(m)
+    l = map_loudness(m)
+    pr = map_prosody(m)
+
+    parts = [g, r, b, t]
+    if fmt:
+        parts.append(fmt)
+    return ", ".join(parts) + f"; speaks with {p}, {l}, {pr}."
 
 
 def duration_warning(m):
     if m["duration"] > 15:
-        return (f"[!] 注意：参考音频时长 {m['duration']:.1f}s 超过 H3 的 15s 上限，"
-                f"请先剪辑到 8~12s 的干声最佳段。\n")
+        return (f"[!] Note: reference audio is {m['duration']:.1f}s long, exceeding the 15s limit; "
+                f"please trim it to an 8-12s dry-sound segment first.\n")
     return ""
+
+
+# --------------------------------------------------------- DSP raw features
+
+def _v(v, fmt="{:.0f}"):
+    """Format a numeric metric; NaN/None -> N/A."""
+    if v is None:
+        return "N/A"
+    try:
+        if v != v:  # NaN
+            return "N/A"
+    except TypeError:
+        return "N/A"
+    return fmt.format(v)
+
+
+def format_dsp_features(m):
+    """Raw DSP acoustic features as structured English text (no interpretation).
+
+    The caller is expected to append an instruction asking the LLM to turn
+    these numbers into a natural-language timbre description.
+    """
+    backend = m.get("backend", "numpy")
+    lines = ["DSP acoustic features extracted from this reference audio "
+             f"(analysis backend: {backend}):"]
+    lines.append(f"- duration {_v(m.get('duration'), '{:.1f}')} s, "
+                 f"voiced-frame ratio {_v(m.get('active_ratio'), '{:.2f}')}")
+    lines.append(
+        f"- F0 pitch: median {_v(m.get('f0_median'))} Hz, "
+        f"p10 {_v(m.get('f0_p10'))} Hz, p90 {_v(m.get('f0_p90'))} Hz, "
+        f"range {_v(m.get('f0_span_st'), '{:.1f}')} semitones, "
+        f"frame-to-frame jitter {_v(m.get('jitter'), '{:.3f}')}"
+    )
+    lines.append(
+        f"- low-frequency energy below 250 Hz: {_v(m.get('low_energy'), '{:.1f}')}% of total"
+    )
+    lines.append(
+        f"- spectrum: centroid median {_v(m.get('centroid_median'))} Hz, "
+        f"85% rolloff {_v(m.get('rolloff85_median'))} Hz, "
+        f"spectral tilt {_v(m.get('spectral_tilt'), '{:.0f}')} dB/decade, "
+        f"spectral flatness {_v(m.get('flatness'), '{:.4f}')}, "
+        f"harmonic peak-to-average ratio {_v(m.get('harmonic_par'), '{:.0f}')}x"
+    )
+    f1, f2, f3 = m.get("formant_f1"), m.get("formant_f2"), m.get("formant_f3")
+    if not (f1 is None or _nan(f1)):
+        lines.append(
+            f"- vocal-tract formants: F1 {_v(f1)} Hz, F2 {_v(f2)} Hz, F3 {_v(f3)} Hz"
+        )
+    else:
+        lines.append("- vocal-tract formants: N/A (pure-numpy backend; install librosa)")
+    lines.append(
+        f"- rhythm: {_v(m.get('tps'), '{:.1f}')} voiced/unvoiced transitions per second, "
+        f"longest continuous voiced run {_v(m.get('longest_voiced'), '{:.2f}')} s"
+    )
+    lines.append(f"- loudness: mean {_v(m.get('level_dbfs'), '{:.1f}')} dBFS")
+    return "\n".join(lines)
+
+
+DSP_CONVERSION_HINT = (
+    "Convert the DSP acoustic features listed above into one concise natural-language "
+    "timbre description per labeled audio (gender, pitch register, brightness, texture, "
+    "resonance, pace, loudness and intonation), and use those descriptions in the "
+    "downstream TTS / voice-cloning prompt."
+)

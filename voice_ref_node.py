@@ -9,15 +9,19 @@ import numpy as np
 
 try:
     from .voice_analysis import analyze_waveform
-    from .timbre_map import describe_timbre
+    from .timbre_map import describe_timbre, format_dsp_features, DSP_CONVERSION_HINT
 except ImportError:  # direct file execution fallback
     from voice_analysis import analyze_waveform
-    from timbre_map import describe_timbre
+    from timbre_map import describe_timbre, format_dsp_features, DSP_CONVERSION_HINT
 
 MAX_AUDIO = 5      # 支持 5 路参考音频（改大即可适配支持更多 audio 的模型）
 MIN_AUDIO = 1      # 至少显示一路，可自动增长到 MAX_AUDIO
 MIN_DURATION = 0.3  # 短于此时长直接报错
 MAX_DURATION = 15.0  # 超过则界面告警（不写入输出文本）
+
+MODE_NATURAL = "natural description"   # 节点内直接转自然语言音色描述
+MODE_DSP = "DSP acoustic features"     # 仅输出 DSP 声学特征，交给 LLM 转换
+OUTPUT_MODES = [MODE_NATURAL, MODE_DSP]
 
 
 def _to_mono(x):
@@ -41,9 +45,17 @@ class VoiceRefDescription:
     def INPUT_TYPES(cls):
         inputs = {
             "required": {
+                "output_mode": (OUTPUT_MODES, {
+                    "default": MODE_NATURAL,
+                    "tooltip": (
+                        "natural description：节点直接输出自然语言音色描述；"
+                        "DSP acoustic features：仅输出原始 DSP 声学特征数值，"
+                        "并附说明让 LLM 自行转换为自然语言音色描述。"
+                    ),
+                }),
                 "audio_1": ("AUDIO", {"tooltip": "第 1 路参考音频（接 LoadAudio）"}),
                 "text_1": ("STRING", {
-                    "default": "音频1：",
+                    "default": "Audio 1:",
                     "multiline": False,
                     "tooltip": "第 1 路音频的用途说明",
                 }),
@@ -54,7 +66,7 @@ class VoiceRefDescription:
         for i in range(2, MAX_AUDIO + 1):
             inputs["optional"][f"audio_{i}"] = ("AUDIO", {"tooltip": f"第 {i} 路参考音频（不接则跳过）"})
             inputs["optional"][f"text_{i}"] = ("STRING", {
-                "default": f"音频{i}：",
+                "default": f"Audio {i}:",
                 "multiline": False,
                 "tooltip": f"第 {i} 路音频的用途说明",
             })
@@ -62,7 +74,7 @@ class VoiceRefDescription:
 
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("voice_prompt",)
-    OUTPUT_TOOLTIPS = ("用途说明 + 音色特征描述拼接后的文本",)
+    OUTPUT_TOOLTIPS = ("用途说明 + 音色描述（自然语言或 DSP 声学特征，由 output_mode 决定）",)
     FUNCTION = "run"
     CATEGORY = "AIGC/音色"
     OUTPUT_NODE = False
@@ -85,7 +97,8 @@ class VoiceRefDescription:
             for msg in messages:
                 print(f"[VoiceRefDescription] {msg}")
 
-    def run(self, audio_1=None, text_1="", audio_2=None, text_2="", audio_3=None, text_3="",
+    def run(self, output_mode=MODE_NATURAL,
+            audio_1=None, text_1="", audio_2=None, text_2="", audio_3=None, text_3="",
             audio_4=None, text_4="", audio_5=None, text_5="", unique_id=None):
         audio_map = {
             1: (audio_1, text_1), 2: (audio_2, text_2), 3: (audio_3, text_3),
@@ -114,10 +127,16 @@ class VoiceRefDescription:
                 )
 
             m = analyze_waveform(x, sr)
-            desc = describe_timbre(m)
-
             purpose = (text or "").strip()
-            parts.append(f"{purpose}{desc}" if purpose else desc)
+
+            if output_mode == MODE_DSP:
+                # 仅输出原始 DSP 声学特征，不做自然语言转换
+                block = f"{purpose}\n{format_dsp_features(m)}" if purpose \
+                        else format_dsp_features(m)
+            else:
+                desc = describe_timbre(m)
+                block = f"{purpose}{desc}" if purpose else desc
+            parts.append(block)
 
             if m["duration"] > MAX_DURATION:
                 alerts.append(
@@ -130,7 +149,11 @@ class VoiceRefDescription:
         if not parts:
             raise ValueError("没有任何可用的音频输入，请至少接入一路不小于 0.3s 的 LoadAudio。")
 
-        return ("\n".join(parts),)
+        if output_mode == MODE_DSP:
+            result = "\n\n".join(parts) + f"\n\n{DSP_CONVERSION_HINT}"
+        else:
+            result = "\n".join(parts)
+        return (result,)
 
 
 NODE_CLASS_MAPPINGS = {

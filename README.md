@@ -1,5 +1,7 @@
 # ComfyUI Easy UI
 
+[中文](README.md) | [English](README_EN.md)
+
 一套让 ComfyUI 工作流更好用的易用性节点合集：界面选区的视频/音频加载器、音色参考描述、直观的分辨率选择器，以及「缺图不报错」的占位图片节点。
 
 界面与交互全部原生融入 ComfyUI：多语言（中/英）、节点内嵌 HTML 交互界面（时间轴、裁剪框）、大文件分片上传、桌面绝对路径直接预览。
@@ -35,16 +37,46 @@
 
 ### VoiceRefDescription
 
-面向 TTS / 声音克隆工作流：最多 5 路参考音频，每路配一行用途说明（默认「音频1：」「音频2：」…）。自动分析音色特征（音高区间、明暗、质感、语速、响度），说明文字与音色描述直接拼接为可直接投喂大模型的提示词，例如：
+面向 TTS / 声音克隆工作流：最多 5 路参考音频，每路配一行用途说明（默认「Audio 1:」「Audio 2:」…）。自动分析音色特征（音高区间、明暗、质感、语速、响度），说明文字与音色描述（统一输出英文）直接拼接为可直接投喂大模型的提示词。描述中嵌入具体数值（F0、低频能量占比、频谱倾斜度、谐波峰值比等），确保多条参考之间高区分度，例如：
 
 ```
-音频1：女声，音高中高偏亮（F0 约 293 Hz），
-中频前突、明亮有活力，语速偏快、能量足，吐字清晰。
+Audio 1: male voice, a mid-high pitch register (F0 median 231 Hz), a bright, forward
+tone with strong mid-highs but a solid chest foundation (15% low-freq energy, spectral
+tilt -25 dB/dec), a natural, clean voice (flatness 0.020, harmonic PAR 20x), prominent
+sibilance, vocal-tract resonances F1 348 Hz / F2 926 Hz; speaks with a relaxed pace with
+frequent pauses, moderate volume.
+
+Audio 2: female voice, a high pitch register (F0 median 312 Hz), a bright, crisp tone
+with forward, penetrating mids (3% low-freq energy, spectral tilt -25 dB/dec), clean
+harmonics and a clear, crisp voice (flatness 0.014, harmonic PAR 15x), vocal-tract
+resonances F1 441 Hz / F2 1017 Hz; speaks with a fast pace, short punchy phrases,
+loud and energetic delivery.
 ```
 
 - 未接入 / 为 None 的通路自动跳过
 - 短于 0.3s 直接报错提示更换；超过 15s 在界面上弹窗告警
-- 纯 numpy 实现的声学分析（VAD / F0 自相关 / 长期平均频谱），无需额外模型
+- 两种输出模式（`output_mode` 选项）：
+  - **natural description**：节点内直接转换为自然语言音色描述（默认）
+  - **DSP acoustic features**：跳过自然语言转换，仅输出原始 DSP 声学特征数值（F0 分位数、低频能量、频谱质心/倾斜/平坦度、谐波峰值比、共振峰 F1/F2/F3、语速、响度等），并在末尾附英文说明，要求 LLM 根据这些特征为每路音频生成自然语言音色描述
+- 优先使用 **librosa**（YIN 基频 + LPC 共振峰 F1/F2/F3）；未安装 librosa 时自动回退到纯 numpy 实现（无共振峰特征），无需额外模型
+
+DSP 模式输出示例：
+
+```
+Audio 1:
+DSP acoustic features extracted from this reference audio (analysis backend: librosa):
+- duration 13.8 s, voiced-frame ratio 0.71
+- F0 pitch: median 221 Hz, p10 171 Hz, p90 296 Hz, range 9.5 semitones, jitter 0.036
+- low-frequency energy below 250 Hz: 15.4% of total
+- spectrum: centroid 920 Hz, tilt -25 dB/decade, flatness 0.0201, harmonic PAR 20x
+- vocal-tract formants: F1 348 Hz, F2 926 Hz, F3 1805 Hz
+- rhythm: 2.7 transitions/s, longest voiced run 1.78 s
+- loudness: mean -30.1 dBFS
+
+Convert the DSP acoustic features listed above into one concise natural-language
+timbre description per labeled audio ..., and use those descriptions in the downstream
+TTS / voice-cloning prompt.
+```
 
 ### ResolutionSelectorShortSide
 
@@ -74,6 +106,7 @@ git clone https://github.com/hjc3321/comfyui-easy-ui.git
 ## 依赖
 
 - **ffmpeg**（仅 LoadVideoRange / LoadAudioRange 需要）：程序会依次尝试环境变量 `FFMPEG_PATH` → 系统 PATH → `imageio_ffmpeg` → 常见安装目录。音色分析等其它节点无 ffmpeg 也能用。
+- **librosa**（VoiceRefDescription 使用，已在 `requirements.txt` 声明）：提供 YIN 基频跟踪与 LPC 共振峰分析，显著提升音色区分度。ComfyUI Manager 会自动安装；节点首次加载时若检测到缺失也会自动 pip 安装。安装失败则自动回退到纯 numpy 后端（无共振峰特征）。
 - Python 包 `numpy` / `torch` / `Pillow`（ComfyUI 环境自带）。
 - 支持多语言界面（内置中/英 `locales`），跟随 ComfyUI 语言设置自动切换。
 
@@ -91,7 +124,8 @@ git clone https://github.com/hjc3321/comfyui-easy-ui.git
 
 ```
 comfyui-easy-ui/
-├── __init__.py               # 节点注册入口
+├── __init__.py               # 节点注册入口（自动安装缺失依赖）
+├── requirements.txt          # pip 依赖（librosa）
 ├── video_audio_ui_node.py    # LoadVideoRange / LoadAudioRange
 ├── ffmpeg_utils.py           # ffmpeg/ffprobe 定位与执行
 ├── voice_ref_node.py         # VoiceRefDescription

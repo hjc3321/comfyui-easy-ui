@@ -24,6 +24,49 @@ _DIR = os.path.dirname(os.path.abspath(__file__))
 if _DIR not in sys.path:
     sys.path.insert(0, _DIR)
 
+
+def _ensure_requirements():
+    """自动安装 requirements.txt 中缺失的依赖（静默失败不影响节点加载）。"""
+    import importlib.util
+    import subprocess
+
+    req_path = os.path.join(_DIR, "requirements.txt")
+    if not os.path.exists(req_path):
+        return
+    # requirements 里的包名 -> 实际 import 名（仅列不一致的）
+    _IMPORT_NAMES = {"librosa": "librosa"}
+    missing = []
+    with open(req_path, encoding="utf-8") as f:
+        for line in f:
+            spec = line.split("#", 1)[0].strip()
+            if not spec:
+                continue
+            pkg = spec
+            for sep in ("==", ">=", "<=", "~=", ">", "<", ";", "[", " "):
+                pkg = pkg.split(sep, 1)[0]
+            mod_name = _IMPORT_NAMES.get(pkg.lower(), pkg.replace("-", "_"))
+            if importlib.util.find_spec(mod_name) is None:
+                missing.append(spec)
+    if not missing:
+        return
+    print(f"[comfyui-easy-ui] 检测到缺失依赖，正在安装：{', '.join(missing)}")
+    try:
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", *missing],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        print("[comfyui-easy-ui] 依赖安装完成")
+    except Exception as e:
+        print(
+            f"[comfyui-easy-ui] 依赖自动安装失败（节点仍可加载，音色分析将回退到纯 numpy 后端）：{e}\n"
+            f"  可手动执行：{sys.executable} -m pip install {' '.join(missing)}"
+        )
+
+
+_ensure_requirements()
+
 from voice_ref_node import (  # noqa: E402
     NODE_CLASS_MAPPINGS as _VOICE_CLASSES,
     NODE_DISPLAY_NAME_MAPPINGS as _VOICE_NAMES,

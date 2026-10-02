@@ -1,0 +1,5 @@
+# comfyui-easy-ui dependencies
+# VoiceRefDescription: librosa provides YIN pitch tracking and LPC formant
+# analysis; the node automatically falls back to a pure-numpy backend if
+# this is unavailable, but timbre discrimination is much better with it.
+librosa>=0.10

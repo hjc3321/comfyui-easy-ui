@@ -4,6 +4,7 @@
       "display_name": "Voice Reference Description",
       "description": "Analyze timbre features of multiple reference audios and merge them with their usage notes into prompt text (unconnected audio is skipped; too-short audio raises an error; audio over 15s triggers a UI warning).",
       "inputs": {
+        "output_mode": { "name": "output mode", "tooltip": "natural description: node outputs a natural-language timbre description directly; DSP acoustic features: outputs only raw DSP metrics (F0, formants, spectrum, etc.) plus an instruction asking the LLM to convert them into a natural-language description" },
         "audio_1": { "name": "audio_1", "tooltip": "1st reference audio (connect LoadAudio)" },
         "text_1": { "name": "note_1", "tooltip": "Usage note for the 1st audio, concatenated directly with the timbre description, e.g. Audio 1: " },
         "audio_2": { "name": "audio_2", "tooltip": "2nd reference audio (skipped if not connected)" },
