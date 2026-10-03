@@ -40,24 +40,26 @@ Video decoding uses an **ffmpeg subprocess** (rawvideo rgb24 / f32le PCM) — no
 Built for TTS / voice-clone workflows: up to 5 reference audios, each paired with a one-line usage note (defaults to "Audio 1:", "Audio 2:", ...). Timbre features (pitch register, brightness, texture, pace, loudness) are analyzed automatically, and the note is concatenated directly with the timbre description (always output in English) into a prompt ready to feed an LLM. Descriptions embed concrete numbers (F0, low-frequency energy %, spectral tilt, harmonic PAR, etc.) so that even similar-sounding references produce clearly distinct text:
 
 ```
-Audio 1: male voice, a mid-high pitch register (F0 median 231 Hz), a bright, forward
-tone with strong mid-highs but a solid chest foundation (15% low-freq energy, spectral
-tilt -25 dB/dec), a natural, clean voice (flatness 0.020, harmonic PAR 20x), prominent
-sibilance, vocal-tract resonances F1 348 Hz / F2 926 Hz; speaks with a relaxed pace with
-frequent pauses, moderate volume.
+Audio 1: A mid-high pitch register (F0 median 231 Hz), a bright, forward tone with
+strong mid-highs but a solid chest foundation (15% low-freq energy, spectral tilt
+-25 dB/dec), a natural, clean voice (flatness 0.020, harmonic PAR 20x), prominent
+sibilance, vocal-tract resonances F1 348 Hz / F2 926 Hz; speaks with a relaxed pace
+with frequent pauses, moderate volume.
 
-Audio 2: female voice, a high pitch register (F0 median 312 Hz), a bright, crisp tone
-with forward, penetrating mids (3% low-freq energy, spectral tilt -25 dB/dec), clean
-harmonics and a clear, crisp voice (flatness 0.014, harmonic PAR 15x), vocal-tract
-resonances F1 441 Hz / F2 1017 Hz; speaks with a fast pace, short punchy phrases,
-loud and energetic delivery.
+Audio 2: A high pitch register (F0 median 312 Hz), a bright, crisp tone with forward,
+penetrating mids (3% low-freq energy, spectral tilt -25 dB/dec), clean harmonics and a
+clear, crisp voice (flatness 0.014, harmonic PAR 15x), vocal-tract resonances F1 441
+Hz / F2 1017 Hz; speaks with a fast pace, short punchy phrases, loud and energetic
+delivery.
 ```
+
+Descriptions contain no gender classification — only objective acoustic features (pitch, resonance, spectrum, rhythm, etc.).
 
 - Unconnected / None channels are skipped automatically
 - Audio shorter than 0.3s raises an error asking for a replacement; longer than 15s triggers a UI warning
 - Two output modes (`output_mode` option):
   - **natural description**: the node converts features into natural-language timbre text directly (default)
-  - **DSP acoustic features**: skips the natural-language conversion and outputs only raw DSP metrics (F0 percentiles, low-frequency energy, spectral centroid/tilt/flatness, harmonic PAR, formants F1/F2/F3, rhythm, loudness), with a trailing instruction asking the LLM to turn them into a natural-language timbre description per audio
+  - **DSP acoustic features**: skips the natural-language conversion and outputs only raw DSP metrics (F0 percentiles, low-frequency energy, spectral centroid/tilt/flatness, harmonic PAR, formants F1/F2/F3, rhythm, loudness), with a trailing instruction asking the LLM to turn them into a natural-language timbre description per audio (explicitly told not to state or infer the speaker's gender)
 - Prefers **librosa** (YIN pitch tracking + LPC formants F1/F2/F3); automatically falls back to a pure-numpy implementation (no formant features) when librosa is unavailable — no extra models required
 
 DSP-mode output example:
@@ -74,8 +76,8 @@ DSP acoustic features extracted from this reference audio (analysis backend: lib
 - loudness: mean -30.1 dBFS
 
 Convert the DSP acoustic features listed above into one concise natural-language
-timbre description per labeled audio ..., and use those descriptions in the downstream
-TTS / voice-cloning prompt.
+timbre description per labeled audio ... (do not state or infer the speaker's gender),
+and use those descriptions in the downstream TTS / voice-cloning prompt.
 ```
 
 ### ResolutionSelectorShortSide

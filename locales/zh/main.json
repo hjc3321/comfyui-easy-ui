@@ -4,7 +4,7 @@
       "display_name": "音色参考描述",
       "description": "分析多路参考音频的音色特征，与各自的用途说明拼接为提示词文本（未接入的音频自动跳过；过短报错；超 15s 界面告警）",
       "inputs": {
-        "output_mode": { "name": "输出模式", "tooltip": "natural description：节点直接输出自然语言音色描述；DSP acoustic features：仅输出原始 DSP 声学特征数值（F0、共振峰、频谱等），并附说明让 LLM 自行转换为自然语言音色描述" },
+        "output_mode": { "name": "输出模式", "tooltip": "natural description：节点直接输出自然语言音色描述（不识别性别）；DSP acoustic features：仅输出原始 DSP 声学特征数值（F0、共振峰、频谱等），并附说明让 LLM 自行转换为自然语言音色描述（不识别、不推断性别）" },
         "audio_1": { "name": "音频1", "tooltip": "第 1 路参考音频（接 LoadAudio）" },
         "text_1": { "name": "说明1", "tooltip": "第 1 路音频的用途说明，与音色描述直接拼接，例如：Audio 1:" },
         "audio_2": { "name": "音频2", "tooltip": "第 2 路参考音频（不接则跳过）" },

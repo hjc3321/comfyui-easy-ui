@@ -40,24 +40,26 @@
 面向 TTS / 声音克隆工作流：最多 5 路参考音频，每路配一行用途说明（默认「Audio 1:」「Audio 2:」…）。自动分析音色特征（音高区间、明暗、质感、语速、响度），说明文字与音色描述（统一输出英文）直接拼接为可直接投喂大模型的提示词。描述中嵌入具体数值（F0、低频能量占比、频谱倾斜度、谐波峰值比等），确保多条参考之间高区分度，例如：
 
 ```
-Audio 1: male voice, a mid-high pitch register (F0 median 231 Hz), a bright, forward
-tone with strong mid-highs but a solid chest foundation (15% low-freq energy, spectral
-tilt -25 dB/dec), a natural, clean voice (flatness 0.020, harmonic PAR 20x), prominent
-sibilance, vocal-tract resonances F1 348 Hz / F2 926 Hz; speaks with a relaxed pace with
-frequent pauses, moderate volume.
+Audio 1: A mid-high pitch register (F0 median 231 Hz), a bright, forward tone with
+strong mid-highs but a solid chest foundation (15% low-freq energy, spectral tilt
+-25 dB/dec), a natural, clean voice (flatness 0.020, harmonic PAR 20x), prominent
+sibilance, vocal-tract resonances F1 348 Hz / F2 926 Hz; speaks with a relaxed pace
+with frequent pauses, moderate volume.
 
-Audio 2: female voice, a high pitch register (F0 median 312 Hz), a bright, crisp tone
-with forward, penetrating mids (3% low-freq energy, spectral tilt -25 dB/dec), clean
-harmonics and a clear, crisp voice (flatness 0.014, harmonic PAR 15x), vocal-tract
-resonances F1 441 Hz / F2 1017 Hz; speaks with a fast pace, short punchy phrases,
-loud and energetic delivery.
+Audio 2: A high pitch register (F0 median 312 Hz), a bright, crisp tone with forward,
+penetrating mids (3% low-freq energy, spectral tilt -25 dB/dec), clean harmonics and a
+clear, crisp voice (flatness 0.014, harmonic PAR 15x), vocal-tract resonances F1 441
+Hz / F2 1017 Hz; speaks with a fast pace, short punchy phrases, loud and energetic
+delivery.
 ```
+
+描述不包含性别判断，仅基于客观声学特征（音高、共振、频谱、节奏等）。
 
 - 未接入 / 为 None 的通路自动跳过
 - 短于 0.3s 直接报错提示更换；超过 15s 在界面上弹窗告警
 - 两种输出模式（`output_mode` 选项）：
   - **natural description**：节点内直接转换为自然语言音色描述（默认）
-  - **DSP acoustic features**：跳过自然语言转换，仅输出原始 DSP 声学特征数值（F0 分位数、低频能量、频谱质心/倾斜/平坦度、谐波峰值比、共振峰 F1/F2/F3、语速、响度等），并在末尾附英文说明，要求 LLM 根据这些特征为每路音频生成自然语言音色描述
+  - **DSP acoustic features**：跳过自然语言转换，仅输出原始 DSP 声学特征数值（F0 分位数、低频能量、频谱质心/倾斜/平坦度、谐波峰值比、共振峰 F1/F2/F3、语速、响度等），并在末尾附英文说明，要求 LLM 根据这些特征为每路音频生成自然语言音色描述（明确要求不识别、不推断说话人性别）
 - 优先使用 **librosa**（YIN 基频 + LPC 共振峰 F1/F2/F3）；未安装 librosa 时自动回退到纯 numpy 实现（无共振峰特征），无需额外模型
 
 DSP 模式输出示例：
@@ -74,8 +76,8 @@ DSP acoustic features extracted from this reference audio (analysis backend: lib
 - loudness: mean -30.1 dBFS
 
 Convert the DSP acoustic features listed above into one concise natural-language
-timbre description per labeled audio ..., and use those descriptions in the downstream
-TTS / voice-cloning prompt.
+timbre description per labeled audio ... (do not state or infer the speaker's gender),
+and use those descriptions in the downstream TTS / voice-cloning prompt.
 ```
 
 ### ResolutionSelectorShortSide

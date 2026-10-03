@@ -11,21 +11,6 @@ def _nan(v):
     return v != v
 
 
-def map_gender(m):
-    """F0 median + low-energy share -> voice classification."""
-    f0 = m["f0_median"]
-    low = m["low_energy"]
-    if _nan(f0):
-        return "voice gender unknown"
-    # male: lower F0 and/or strong low-frequency chest resonance
-    if f0 < 145 or low > 12:
-        return "male voice"
-    if f0 < 175:
-        conf = "leaning male voice" if f0 < 160 else "male or low-register female voice (ambiguous)"
-        return f"{conf} (F0 median {f0:.0f} Hz, in the male/female overlap zone)"
-    return "female voice"
-
-
 def map_register(m):
     """Pitch register with F0 number embedded."""
     f0 = m["f0_median"]
@@ -111,7 +96,7 @@ def map_prosody(m):
 def map_formants(m):
     """Vocal-tract resonances (F1/F2) — strong timbre discriminator.
 
-    Longer vocal tract (typically male) -> lower formants.
+    A longer vocal tract produces lower formant frequencies.
     """
     f1, f2 = m.get("formant_f1"), m.get("formant_f2")
     if not f1 or _nan(f1) or not f2 or _nan(f2):
@@ -128,12 +113,11 @@ def describe_timbre(m):
     concrete numeric values so that two similar-sounding references
     still produce clearly different text.
     """
-    # gender + register line
-    g = map_gender(m)
+    # register line (leads the sentence)
     r = map_register(m)
 
     # body / resonance line (low-frequency weight is the strongest
-    # discriminator between chesty male and focused female voices)
+    # discriminator between chesty and focused voices)
     b = map_brightness(m)
 
     # texture line
@@ -147,10 +131,13 @@ def describe_timbre(m):
     l = map_loudness(m)
     pr = map_prosody(m)
 
-    parts = [g, r, b, t]
+    parts = [r, b, t]
     if fmt:
         parts.append(fmt)
-    return ", ".join(parts) + f"; speaks with {p}, {l}, {pr}."
+    text = ", ".join(parts)
+    if text:
+        text = text[0].upper() + text[1:]
+    return text + f"; speaks with {p}, {l}, {pr}."
 
 
 def duration_warning(m):
@@ -218,7 +205,7 @@ def format_dsp_features(m):
 
 DSP_CONVERSION_HINT = (
     "Convert the DSP acoustic features listed above into one concise natural-language "
-    "timbre description per labeled audio (gender, pitch register, brightness, texture, "
-    "resonance, pace, loudness and intonation), and use those descriptions in the "
-    "downstream TTS / voice-cloning prompt."
+    "timbre description per labeled audio (pitch register, brightness, texture, "
+    "resonance, pace, loudness and intonation; do not state or infer the speaker's "
+    "gender), and use those descriptions in the downstream TTS / voice-cloning prompt."
 )

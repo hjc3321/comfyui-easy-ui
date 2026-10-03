@@ -60,7 +60,7 @@ def _formants_lpc(frames, sr, max_frames=120):
     """Estimate F1/F2/F3 (median Hz) via LPC on voiced frames.
 
     Vocal-tract resonances are among the strongest timbre discriminators
-    (male vocal tract is longer -> lower formants).
+    (a longer vocal tract produces lower formant frequencies).
     """
     order = max(8, sr // 1000 + 4)
     out = {"f1": [], "f2": [], "f3": []}

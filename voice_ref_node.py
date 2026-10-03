@@ -48,9 +48,9 @@ class VoiceRefDescription:
                 "output_mode": (OUTPUT_MODES, {
                     "default": MODE_NATURAL,
                     "tooltip": (
-                        "natural description：节点直接输出自然语言音色描述；"
+                        "natural description：节点直接输出自然语言音色描述（不识别性别）；"
                         "DSP acoustic features：仅输出原始 DSP 声学特征数值，"
-                        "并附说明让 LLM 自行转换为自然语言音色描述。"
+                        "并附说明让 LLM 自行转换为自然语言音色描述（同样不识别、不推断性别）。"
                     ),
                 }),
                 "audio_1": ("AUDIO", {"tooltip": "第 1 路参考音频（接 LoadAudio）"}),
