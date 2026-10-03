@@ -37,6 +37,11 @@ Video decoding uses an **ffmpeg subprocess** (rawvideo rgb24 / f32le PCM) — no
 
 ### VoiceRefDescription
 
+> **Tutorial: using this node to fix inaccurate audio in MiniMax H3 multi-role voice-reference video generation**
+> Example workflow: [`workflows/MiniMax-H3 Multi-Role Voice Reference Fixed - 720P-V1.json`](workflows/MiniMax-H3%20Multi-Role%20Voice%20Reference%20Fixed%20-%20720P-V1.json)
+> - YouTube: <https://www.youtube.com/watch?v=Zj2tX9osIIA>
+> - Bilibili: <https://www.bilibili.com/video/BV1hEaU6TEQs> (Chinese)
+
 Built for TTS / voice-clone workflows: up to 5 reference audios, each paired with a one-line usage note (defaults to "Audio 1:", "Audio 2:", ...). Timbre features (pitch register, brightness, texture, pace, loudness) are analyzed automatically, and the note is concatenated directly with the timbre description (always output in English) into a prompt ready to feed an LLM. Descriptions embed concrete numbers (F0, low-frequency energy %, spectral tilt, harmonic PAR, etc.) so that even similar-sounding references produce clearly distinct text:
 
 ```
@@ -137,6 +142,7 @@ comfyui-easy-ui/
 ├── image_node.py             # EasyLoadImage / EasyBatchImages
 ├── api_routes.py             # /easyui/* HTTP routes
 ├── locales/                  # zh / en localization
+├── workflows/                # example workflows (MiniMax H3 multi-role voice reference)
 └── web/js/                   # frontend interactions (timeline, crop box, dynamic ports, etc.)
 ```
 

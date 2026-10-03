@@ -37,6 +37,11 @@
 
 ### VoiceRefDescription
 
+> **使用教程：用本节点解决 MiniMax H3 多角色音色参考生视频时音频不准确的问题**
+> 示例工作流：[`workflows/MiniMax-H3 Multi-Role Voice Reference Fixed - 720P-V1.json`](workflows/MiniMax-H3%20Multi-Role%20Voice%20Reference%20Fixed%20-%20720P-V1.json)
+> - YouTube：<https://www.youtube.com/watch?v=Zj2tX9osIIA>
+> - B站：<https://www.bilibili.com/video/BV1hEaU6TEQs>
+
 面向 TTS / 声音克隆工作流：最多 5 路参考音频，每路配一行用途说明（默认「Audio 1:」「Audio 2:」…）。自动分析音色特征（音高区间、明暗、质感、语速、响度），说明文字与音色描述（统一输出英文）直接拼接为可直接投喂大模型的提示词。描述中嵌入具体数值（F0、低频能量占比、频谱倾斜度、谐波峰值比等），确保多条参考之间高区分度，例如：
 
 ```
@@ -137,6 +142,7 @@ comfyui-easy-ui/
 ├── image_node.py             # EasyLoadImage / EasyBatchImages
 ├── api_routes.py             # /easyui/* HTTP 路由
 ├── locales/                  # zh / en 多语言
+├── workflows/                # 示例工作流（MiniMax H3 多角色音色参考）
 └── web/js/                   # 前端交互（时间轴、裁剪框、动态端口等）
 ```
 
